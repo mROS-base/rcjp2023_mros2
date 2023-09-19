@@ -4,47 +4,95 @@
 #include "driver/gpio.h"
 #include "led.h"
 #include "pushswitch.h"
+#include "buzzer.h"
 
 void delay_ms(int ms)
 {
   vTaskDelay(ms / portTICK_PERIOD_MS);
 }
 
+void execByMode(char mode)
+{
+  switch (mode)
+  {
+  case 1:
+    buzzer_on(FREQ_C);
+    break;
+  case 2:
+    buzzer_on(FREQ_D);
+    break;
+  case 3:
+    buzzer_on(FREQ_E);
+    break;
+  }
+  delay_ms(1000);
+  buzzer_mute();
+}
+
 extern "C" void app_main(void)
 {
   led_init();
   pushswitch_init();
+  buzzer_init();
 
-  int pushswitch_r = 0;
-  int pushswitch_c = 0;
-  int pushswitch_l = 0;
+  char mode = 1;
+  set_led(mode);
 
   while (1)
   {
     while (gpio_get_level(SW_L) && gpio_get_level(SW_C) && gpio_get_level(SW_R))
     {
+      delay_ms(10);
       continue;
     }
+
     if (gpio_get_level(SW_R) == 0)
     {
-      pushswitch_r = !pushswitch_r;
-      gpio_set_level(LED3, (pushswitch_r & 0x01));
-    }
-    if (gpio_get_level(SW_C) == 0)
-    {
-      pushswitch_c = !pushswitch_c;
-      gpio_set_level(LED2, (pushswitch_c & 0x01));
-      gpio_set_level(LED1, (pushswitch_c & 0x01));
-    }
-    if (gpio_get_level(SW_L) == 0)
-    {
-      pushswitch_l = !pushswitch_l;      
-      gpio_set_level(LED0, (pushswitch_l & 0x01));
+      mode++;
+      if(mode > 15)
+      {
+        mode = 15;
+      }
+      else
+      {
+        buzzer_on(INC_FREQ);
+        delay_ms(30);
+        buzzer_mute();
+      }
+      set_led(mode);
     }
 
+    if (gpio_get_level(SW_L) == 0)
+    {
+      mode--;
+      if(mode < 1)
+      {
+        mode = 1;
+      }
+      else
+      {
+        buzzer_on(DEC_FREQ);
+        delay_ms(30);
+        buzzer_mute();
+      }
+      set_led(mode);
+    }
+
+    if (gpio_get_level(SW_C) == 0)
+    {
+        buzzer_on(INC_FREQ);
+        delay_ms(30);
+        buzzer_mute();
+        buzzer_on(DEC_FREQ);
+        delay_ms(30);
+        buzzer_mute();
+        execByMode(mode);
+
+    }
     delay_ms(30);
     while (!(gpio_get_level(SW_L) && gpio_get_level(SW_C) && gpio_get_level(SW_R)))
     {
+      delay_ms(10);
       continue;
     }
     delay_ms(30);
