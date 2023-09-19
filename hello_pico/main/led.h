@@ -6,5 +6,6 @@
 #define LED3 GPIO_NUM_41
 
 void led_init();
+void set_led(char);
 
 #endif // _LED_H_
