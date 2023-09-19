@@ -1,2 +1,2 @@
-idf_component_register(SRCS "blink_led.c"
+idf_component_register(SRCS "app.cpp"
                     INCLUDE_DIRS ".")
