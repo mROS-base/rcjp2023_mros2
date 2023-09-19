@@ -2,9 +2,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "esp_log.h"
+
 #include "led.h"
 #include "pushswitch.h"
 #include "buzzer.h"
+#include "proximity_sensor.h"
 
 void delay_ms(int ms)
 {
@@ -37,12 +40,25 @@ extern "C" void app_main(void)
 
   char mode = 1;
   set_led(mode);
+  int sensor_value_r;
+  int sensor_value_fr;
+  int sensor_value_fl;
+  int sensor_value_l;
 
   while (1)
   {
     while (gpio_get_level(SW_L) && gpio_get_level(SW_C) && gpio_get_level(SW_R))
     {
-      delay_ms(10);
+      sensor_value_r = read_sensor(R);
+      sensor_value_fr = read_sensor(FR);
+      sensor_value_fl = read_sensor(FL);
+      sensor_value_l = read_sensor(L);
+      ESP_LOGI("app_main", "r_sen  is %d\n\r", sensor_value_r);
+      ESP_LOGI("app_main", "fr_sen is %d\n\r", sensor_value_fr);
+      ESP_LOGI("app_main", "fl_sen is %d\n\r", sensor_value_fl);
+      ESP_LOGI("app_main", "l_sen  is %d\n\r", sensor_value_l);
+
+      delay_ms(100);
       continue;
     }
 
@@ -87,7 +103,6 @@ extern "C" void app_main(void)
         delay_ms(30);
         buzzer_mute();
         execByMode(mode);
-
     }
     delay_ms(30);
     while (!(gpio_get_level(SW_L) && gpio_get_level(SW_C) && gpio_get_level(SW_R)))
