@@ -7,7 +7,7 @@
 #include "led.h"
 #include "pushswitch.h"
 #include "buzzer.h"
-#include "proximity_sensor.h"
+#include "analog_sensor.h"
 
 void delay_ms(int ms)
 {
@@ -37,6 +37,7 @@ extern "C" void app_main(void)
   led_init();
   pushswitch_init();
   buzzer_init();
+  analog_sensor_init();
 
   char mode = 1;
   set_led(mode);
@@ -44,6 +45,7 @@ extern "C" void app_main(void)
   int sensor_value_fr;
   int sensor_value_fl;
   int sensor_value_l;
+  int battery_level;
 
   while (1)
   {
@@ -53,10 +55,12 @@ extern "C" void app_main(void)
       sensor_value_fr = read_sensor(FR);
       sensor_value_fl = read_sensor(FL);
       sensor_value_l = read_sensor(L);
+      battery_level = read_battery_level();
       ESP_LOGI("app_main", "r_sen  is %d\n\r", sensor_value_r);
       ESP_LOGI("app_main", "fr_sen is %d\n\r", sensor_value_fr);
       ESP_LOGI("app_main", "fl_sen is %d\n\r", sensor_value_fl);
       ESP_LOGI("app_main", "l_sen  is %d\n\r", sensor_value_l);
+      ESP_LOGI("app_main", "battery_level is %d\n\r", battery_level);
 
       delay_ms(100);
       continue;

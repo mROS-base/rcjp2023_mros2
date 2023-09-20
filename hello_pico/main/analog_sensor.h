@@ -1,5 +1,5 @@
-#ifndef _PROXIMITY_SENSOR_H
-#define _PROXIMITY_SENSOR_H
+#ifndef __PROXIMITY_SENSOR_H_
+#define __PROXIMITY_SENSOR_H_
 
 #define SLED_FR GPIO_NUM_16
 #define SLED_FL GPIO_NUM_15
@@ -10,18 +10,21 @@
 #define AD2 GPIO_NUM_5
 #define AD3 GPIO_NUM_6
 #define AD4 GPIO_NUM_7
+#define AD0 GPIO_NUM_8
 
 #define ADC_UNIT ADC_UNIT_1
 #define AD1_CHANNEL ADC_CHANNEL_3
 #define AD2_CHANNEL ADC_CHANNEL_4
 #define AD3_CHANNEL ADC_CHANNEL_5
 #define AD4_CHANNEL ADC_CHANNEL_6
+#define AD0_CHANNEL ADC_CHANNEL_7
 
 typedef enum {
   L, FL, FR, R
 } SENSOR_POS;
 
-void proximity_sensor_init();
+void analog_sensor_init();
 int read_sensor(SENSOR_POS);
+int read_battery_level();
 
-#endif // _PROXIMITY_SENSOR_H
+#endif // __PROXIMITY_SENSOR_H_
