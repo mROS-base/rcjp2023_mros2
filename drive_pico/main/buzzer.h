@@ -11,7 +11,7 @@
 #define FREQ_E 659 // ミ
 
 #define LEDC_FREQ 5000
-#define HARF_DUTY 511 // (((2 ** 10) -1) / 2
+#define HALF_DUTY 511 // (((2 ** 10) -1) / 2
 
 void buzzer_init(void);
 void buzzer_on(int freq);
