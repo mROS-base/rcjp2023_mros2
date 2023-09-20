@@ -1,5 +1,5 @@
-#ifndef _LED_H_
-#define _LED_H_
+#ifndef __LED_H_
+#define __LED_H_
 #define LED0 GPIO_NUM_1
 #define LED1 GPIO_NUM_2
 #define LED2 GPIO_NUM_42
@@ -8,4 +8,4 @@
 void led_init();
 void set_led(char);
 
-#endif // _LED_H_
+#endif // __LED_H_

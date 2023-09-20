@@ -1,5 +1,5 @@
-#ifndef _BUZZER_H_
-#define _BUZZER_H_
+#ifndef __BUZZER_H_
+#define __BUZZER_H_
 
 #define BUZZER GPIO_NUM_38
 
@@ -17,4 +17,4 @@ void buzzer_init(void);
 void buzzer_on(int freq);
 void buzzer_mute();
 
-#endif // _BUZZER_H_
+#endif // __BUZZER_H_
