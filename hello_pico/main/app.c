@@ -24,10 +24,10 @@ void execByMode(char mode)
   buzzer_mute();
 }
 
-extern "C" void app_main(void)
+void app_main(void)
 {
   pico_init();
-  
+
   char mode = 1;
   set_led(mode);
   int sensor_value_r;
@@ -58,7 +58,7 @@ extern "C" void app_main(void)
     if (gpio_get_level(SW_R) == 0)
     {
       mode++;
-      if(mode > 15)
+      if (mode > 15)
       {
         mode = 15;
       }
@@ -74,7 +74,7 @@ extern "C" void app_main(void)
     if (gpio_get_level(SW_L) == 0)
     {
       mode--;
-      if(mode < 1)
+      if (mode < 1)
       {
         mode = 1;
       }
@@ -89,13 +89,13 @@ extern "C" void app_main(void)
 
     if (gpio_get_level(SW_C) == 0)
     {
-        buzzer_on(INC_FREQ);
-        delay_ms(30);
-        buzzer_mute();
-        buzzer_on(DEC_FREQ);
-        delay_ms(30);
-        buzzer_mute();
-        execByMode(mode);
+      buzzer_on(INC_FREQ);
+      delay_ms(30);
+      buzzer_mute();
+      buzzer_on(DEC_FREQ);
+      delay_ms(30);
+      buzzer_mute();
+      execByMode(mode);
     }
     delay_ms(30);
     while (!(gpio_get_level(SW_L) && gpio_get_level(SW_C) && gpio_get_level(SW_R)))
