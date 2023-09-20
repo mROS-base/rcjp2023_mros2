@@ -4,15 +4,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 
-#include "led.h"
-#include "pushswitch.h"
-#include "buzzer.h"
-#include "analog_sensor.h"
-
-void delay_ms(int ms)
-{
-  vTaskDelay(ms / portTICK_PERIOD_MS);
-}
+#include "pico.h"
 
 void execByMode(char mode)
 {
@@ -34,11 +26,8 @@ void execByMode(char mode)
 
 extern "C" void app_main(void)
 {
-  led_init();
-  pushswitch_init();
-  buzzer_init();
-  analog_sensor_init();
-
+  pico_init();
+  
   char mode = 1;
   set_led(mode);
   int sensor_value_r;
