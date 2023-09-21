@@ -25,19 +25,10 @@ double min_speed = MIN_SPEED;
 double accel = 0.0;
 double speed = 0.0;
 
-double max_omega;
-double min_omega;
-double acc_omega = 0.0;
-double omega = 0;
-
-volatile int motor_move = 0;
-
-static _Bool onTimer0(void *param);
+static bool isr_speed_adjust(void *param);
 static void isr_pwm_count_r(void *);
 static void isr_pwm_count_l(void *);
 static void create_timer(timer_group_t timer_group, timer_idx_t timer_no, int divider, bool (*callback_func)(void *));
-// static _Bool isrR(void *param);
-// static _Bool isrL(void *param);
 
 void motor_init()
 {
@@ -53,11 +44,6 @@ void motor_init()
   gpio_set_level(CW_L, LOW);
   gpio_set_level(PWM_R, LOW);
   gpio_set_level(PWM_L, LOW);
-
-  // create_timer(TIMER_GROUP_0, TIMER_0, 20, &onTimer0);
-  // timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000);
-  // timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN);
-  // timer_start(TIMER_GROUP_0, TIMER_0);
 
   // right motor pwm conf
   ledc_timer_config_t ledc_timer_conf_r = {};
@@ -96,7 +82,7 @@ void motor_init()
   ledc_fade_func_install(ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED);
   ledc_isr_register(isr_pwm_count_r, NULL, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED, NULL);
   ledc_isr_register(isr_pwm_count_l, NULL, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED, NULL);
-  WRITE_PERI_REG(LEDC_INT_ENA_REG, 0x06); // LEDC_TIMER1_OVF_INT_ENA | LEDC_TIMER2_OVF_INT_ENA
+  WRITE_PERI_REG(LEDC_INT_ENA_REG, 0x06); /* LEDCのタイマーオバーフロー割り込み許可 ≒ パルス毎割り込み．0x06はTimer1とTimer2のビットを両方立てたもの */
 }
 
 void constant_speed(int len, int tar_speed)
@@ -112,30 +98,17 @@ void constant_speed(int len, int tar_speed)
   obj_step = (int)((float)len * 2.0 / PULSE);
   gpio_set_level(CW_R, LOW);
   gpio_set_level(CW_L, LOW);
-  motor_move = 1;
 
-  ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_2, step_hz_l);
-
-  gpio_set_level(MOTOR_EN, HIGH);
-  int cnt = 0;
   while ((step_r + step_l) < obj_step)
   {
-    ESP_LOGI("motor.c", "step: %d", (step_r + step_l));
-    delay_ms(100);
-    cnt++;
-    if (cnt > 50)
-    {
-      break;
-    }
+    delay_ms(1);
     continue;
   }
   gpio_set_level(MOTOR_EN, LOW);
-  motor_move = 0;
 }
 
 void accelerate(int len, int tar_speed)
 {
-  gpio_set_level(MOTOR_EN, HIGH);
   int obj_step;
   max_speed = tar_speed;
   accel = 1.5;
@@ -146,8 +119,8 @@ void accelerate(int len, int tar_speed)
   obj_step = (int)((float)len * 2.0 / PULSE);
   gpio_set_level(CW_R, LOW);
   gpio_set_level(CW_L, LOW);
-  motor_move = 1;
 
+  gpio_set_level(MOTOR_EN, HIGH);
   while ((step_r + step_l) < obj_step)
   {
     delay_ms(1);
@@ -158,7 +131,6 @@ void accelerate(int len, int tar_speed)
 
 void decelerate(int len, int tar_speed)
 {
-  gpio_set_level(MOTOR_EN, HIGH);
   int obj_step;
   max_speed = tar_speed;
   accel = 0.0;
@@ -169,6 +141,7 @@ void decelerate(int len, int tar_speed)
   gpio_set_level(CW_R, LOW);
   gpio_set_level(CW_L, LOW);
 
+  gpio_set_level(MOTOR_EN, HIGH);
   while ((len - (step_r + step_l) / 2.0 * PULSE) >
          (((speed * speed) - (MIN_SPEED * MIN_SPEED)) / (2.0 * 1000.0 * 1.5)))
   {
@@ -183,15 +156,18 @@ void decelerate(int len, int tar_speed)
     delay_ms(1);
     continue;
   }
-
-  motor_move = 0;
   gpio_set_level(MOTOR_EN, HIGH);
 }
 
-// 割り込み
-// 目標値の更新周期1kHz
-static _Bool IRAM_ATTR onTimer0(void *param)
+// 速度更新用タイマー割り込み
+static bool IRAM_ATTR isr_speed_adjust(void *param)
 {
+  // 速度更新はモーター回転時のみ
+  if (gpio_get_level(MOTOR_EN) != HIGH)
+  {
+    return 0;
+  }
+
   portENTER_CRITICAL_ISR(&timer_mux);
   speed += accel;
   if (speed > max_speed)
@@ -203,11 +179,8 @@ static _Bool IRAM_ATTR onTimer0(void *param)
     speed = min_speed;
   }
   step_hz_l = step_hz_r = (unsigned short)(speed / PULSE);
-  if (motor_move)
-  {
-    ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_1, step_hz_r);
-    ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_2, step_hz_l);
-  }
+  ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_1, step_hz_r);
+  ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_2, step_hz_l);
   portEXIT_CRITICAL_ISR(&timer_mux);
   return 0;
 }
