@@ -24,7 +24,7 @@ double max_speed = MIN_SPEED;
 double min_speed = MIN_SPEED;
 double accel = 0.0;
 double speed = 0.0;
-bool motor_move = false;
+bool speed_adjusting = false;
 
 static bool isr_speed_adjust(gptimer_handle_t timer, const gptimer_alarm_event_data_t *alarm_data, void *param);
 static void isr_pwm_count_r(void *);
@@ -107,6 +107,74 @@ void motor_init()
   WRITE_PERI_REG(LEDC_INT_ENA_REG, 0x06); /* LEDCのタイマーオバーフロー割り込み許可 ≒ パルス毎割り込み．0x06はTimer1とTimer2のビットを両方立てたもの */
 }
 
+void drive_by_cmd_vel(double linear_x, double angular_z)
+{
+  speed = linear_x * 1000;
+  double speed_r = speed + angular_z * TREAD_WIDTH / 2.0;
+  double speed_l = speed - angular_z * TREAD_WIDTH / 2.0;
+
+  if (speed_r > 0)
+  {
+    gpio_set_level(CW_R, LOW);
+  }
+  else
+  {
+    gpio_set_level(CW_R, HIGH);
+    speed_r *= -1;
+  }
+  if (speed_r < 0.001)
+  {
+    speed_r = 0.0;
+  }
+  else if (speed_r < MIN_SPEED)
+  {
+    speed_r = MIN_SPEED;
+  }
+
+  if (speed_l > 0)
+  {
+    gpio_set_level(CW_L, LOW);
+  }
+  else
+  {
+    gpio_set_level(CW_L, HIGH);
+    speed_l *= -1;
+  }
+  if (speed_l < 0.001)
+  {
+    speed_l = 0.0;
+  }
+  else if (speed_l < MIN_SPEED)
+  {
+    speed_l = MIN_SPEED;
+  }
+
+  if (speed_r == 0.0)
+  {
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
+  }
+  else
+  {
+    step_hz_r = (unsigned short)(speed_r / PULSE);
+    ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_1, step_hz_r);
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, DUTY);
+  }
+
+  if (speed_l == 0.0)
+  {
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 0);
+  }
+  else
+  {
+    step_hz_l = (unsigned short)(speed_l / PULSE);
+    ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_2, step_hz_l);
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, DUTY);
+  }
+
+  ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+  ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
+}
+
 void constant_speed(int len, int tar_speed)
 {
   int obj_step;
@@ -121,13 +189,13 @@ void constant_speed(int len, int tar_speed)
   gpio_set_level(CW_R, LOW);
   gpio_set_level(CW_L, LOW);
 
-  motor_move = true;
+  speed_adjusting = true;
   while ((step_r + step_l) < obj_step)
   {
     delay_ms(1); // ビジーループはFreeRTOSのWDTに引っかかるのでDelayを入れている．以下同様
     continue;
   }
-  motor_move = false;
+  speed_adjusting = false;
 }
 
 void accelerate(int len, int tar_speed)
@@ -143,13 +211,13 @@ void accelerate(int len, int tar_speed)
   gpio_set_level(CW_R, LOW);
   gpio_set_level(CW_L, LOW);
 
-  motor_move = true;
+  speed_adjusting = true;
   while ((step_r + step_l) < obj_step)
   {
     delay_ms(1);
     continue;
   }
-  motor_move = false;
+  speed_adjusting = false;
 }
 
 void decelerate(int len, int tar_speed)
@@ -164,7 +232,7 @@ void decelerate(int len, int tar_speed)
   gpio_set_level(CW_R, LOW);
   gpio_set_level(CW_L, LOW);
 
-  motor_move = true;
+  speed_adjusting = true;
   while ((len - (step_r + step_l) / 2.0 * PULSE) >
          (((speed * speed) - (MIN_SPEED * MIN_SPEED)) / (2.0 * 1000.0 * 1.5)))
   {
@@ -179,7 +247,7 @@ void decelerate(int len, int tar_speed)
     delay_ms(1);
     continue;
   }
-  motor_move = false;
+  speed_adjusting = false;
   ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
   ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 0);
 
@@ -195,13 +263,14 @@ void motor_start()
 void motor_stop()
 {
   gpio_set_level(MOTOR_EN, LOW);
+  speed_adjusting = false;
 }
 
 // 速度更新用タイマー割り込み(1kHz)
 static bool IRAM_ATTR isr_speed_adjust(gptimer_handle_t timer, const gptimer_alarm_event_data_t *alarm_data, void *param)
 {
   set_led(0x01);
-  if (!motor_move)
+  if (!speed_adjusting)
   {
     return 0;
   }
@@ -235,7 +304,7 @@ static bool IRAM_ATTR isr_speed_adjust(gptimer_handle_t timer, const gptimer_ala
 // 右モーターのパルスカウント
 static IRAM_ATTR void isr_pwm_count_r(void *user_arg)
 {
-  if (!motor_move)
+  if (!speed_adjusting)
   {
     WRITE_PERI_REG(LEDC_INT_CLR_REG, (1U << 1));
     return;
@@ -249,7 +318,7 @@ static IRAM_ATTR void isr_pwm_count_r(void *user_arg)
 // 右モーターのパルスカウント
 static IRAM_ATTR void isr_pwm_count_l(void *user_arg)
 {
-  if (!motor_move)
+  if (!speed_adjusting)
   {
     WRITE_PERI_REG(LEDC_INT_CLR_REG, (1U << 2));
     return;
