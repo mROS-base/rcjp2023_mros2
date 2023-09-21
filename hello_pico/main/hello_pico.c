@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "driver/gpio.h"
 #include "esp_log.h"
 
 #include "pico.h"
@@ -36,7 +35,7 @@ void app_main(void)
 
   while (1)
   {
-    while (gpio_get_level(SW_L) && gpio_get_level(SW_C) && gpio_get_level(SW_R))
+    while (read_switch(SW_L) && read_switch(SW_C) && read_switch(SW_R))
     {
       sensor_value_r = read_sensor(R);
       sensor_value_fr = read_sensor(FR);
@@ -53,7 +52,7 @@ void app_main(void)
       continue;
     }
 
-    if (gpio_get_level(SW_R) == 0)
+    if (read_switch(SW_R) == 0)
     {
       mode++;
       if (mode > 15)
@@ -69,7 +68,7 @@ void app_main(void)
       set_led(mode);
     }
 
-    if (gpio_get_level(SW_L) == 0)
+    if (read_switch(SW_L) == 0)
     {
       mode--;
       if (mode < 1)
@@ -85,7 +84,7 @@ void app_main(void)
       set_led(mode);
     }
 
-    if (gpio_get_level(SW_C) == 0)
+    if (read_switch(SW_C) == 0)
     {
       buzzer_on(INC_FREQ);
       delay_ms(30);
@@ -96,7 +95,7 @@ void app_main(void)
       execByMode(mode);
     }
     delay_ms(30);
-    while (!(gpio_get_level(SW_L) && gpio_get_level(SW_C) && gpio_get_level(SW_R)))
+    while (!(read_switch(SW_L) && read_switch(SW_C) && read_switch(SW_R)))
     {
       delay_ms(10);
       continue;

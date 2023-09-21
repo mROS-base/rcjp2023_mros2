@@ -7,7 +7,6 @@
 #include "driver/gptimer.h"
 #include "soc/ledc_reg.h"
 #include "delay_ms.h"
-#include "led.h"
 #include "esp_log.h"
 
 portMUX_TYPE timer_mux = portMUX_INITIALIZER_UNLOCKED;
@@ -24,8 +23,9 @@ double max_speed = MIN_SPEED;
 double min_speed = MIN_SPEED;
 double accel = 0.0;
 double speed = 0.0;
-bool motor_move = false;
+bool speed_adjusting = false;
 
+static double limit_speed(double speed);
 static bool isr_speed_adjust(gptimer_handle_t timer, const gptimer_alarm_event_data_t *alarm_data, void *param);
 static void isr_pwm_count_r(void *);
 static void isr_pwm_count_l(void *);
@@ -76,7 +76,7 @@ void motor_init()
 
   ledc_channel_config_t ledc_channel_conf_r = {};
   ledc_channel_conf_r.channel = LEDC_CHANNEL_1;
-  ledc_channel_conf_r.duty = DUTY;
+  ledc_channel_conf_r.duty = 0;
   ledc_channel_conf_r.gpio_num = PWM_R;
   ledc_channel_conf_r.intr_type = LEDC_INTR_FADE_END;
   ledc_channel_conf_r.speed_mode = LEDC_LOW_SPEED_MODE;
@@ -94,7 +94,7 @@ void motor_init()
 
   ledc_channel_config_t ledc_channel_conf_l = {};
   ledc_channel_conf_l.channel = LEDC_CHANNEL_2;
-  ledc_channel_conf_l.duty = DUTY;
+  ledc_channel_conf_l.duty = 0;
   ledc_channel_conf_l.gpio_num = PWM_L;
   ledc_channel_conf_l.intr_type = LEDC_INTR_FADE_END;
   ledc_channel_conf_l.speed_mode = LEDC_LOW_SPEED_MODE;
@@ -105,6 +105,60 @@ void motor_init()
   ledc_isr_register(isr_pwm_count_r, NULL, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED, NULL);
   ledc_isr_register(isr_pwm_count_l, NULL, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED, NULL);
   WRITE_PERI_REG(LEDC_INT_ENA_REG, 0x06); /* LEDCのタイマーオバーフロー割り込み許可 ≒ パルス毎割り込み．0x06はTimer1とTimer2のビットを両方立てたもの */
+}
+
+void drive_by_cmd_vel(double linear_x, double angular_z)
+{
+  speed = linear_x * 1000;
+  double speed_r = speed + angular_z * TREAD_WIDTH / 2.0;
+  double speed_l = speed - angular_z * TREAD_WIDTH / 2.0;
+
+  if (speed_r > 0)
+  {
+    gpio_set_level(CW_R, LOW);
+  }
+  else
+  {
+    gpio_set_level(CW_R, HIGH);
+    speed_r *= -1;
+  }
+  speed_r = limit_speed(speed_r);
+
+  if (speed_l > 0)
+  {
+    gpio_set_level(CW_L, LOW);
+  }
+  else
+  {
+    gpio_set_level(CW_L, HIGH);
+    speed_l *= -1;
+  }
+  speed_l = limit_speed(speed_l);
+
+  if (speed_r == 0.0)
+  {
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
+  }
+  else
+  {
+    step_hz_r = (unsigned short)(speed_r / PULSE);
+    ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_1, step_hz_r);
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, DUTY);
+  }
+
+  if (speed_l == 0.0)
+  {
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 0);
+  }
+  else
+  {
+    step_hz_l = (unsigned short)(speed_l / PULSE);
+    ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_2, step_hz_l);
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, DUTY);
+  }
+
+  ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+  ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
 }
 
 void constant_speed(int len, int tar_speed)
@@ -121,13 +175,13 @@ void constant_speed(int len, int tar_speed)
   gpio_set_level(CW_R, LOW);
   gpio_set_level(CW_L, LOW);
 
-  motor_move = true;
+  speed_adjusting = true;
   while ((step_r + step_l) < obj_step)
   {
     delay_ms(1); // ビジーループはFreeRTOSのWDTに引っかかるのでDelayを入れている．以下同様
     continue;
   }
-  motor_move = false;
+  speed_adjusting = false;
 }
 
 void accelerate(int len, int tar_speed)
@@ -143,13 +197,13 @@ void accelerate(int len, int tar_speed)
   gpio_set_level(CW_R, LOW);
   gpio_set_level(CW_L, LOW);
 
-  motor_move = true;
+  speed_adjusting = true;
   while ((step_r + step_l) < obj_step)
   {
     delay_ms(1);
     continue;
   }
-  motor_move = false;
+  speed_adjusting = false;
 }
 
 void decelerate(int len, int tar_speed)
@@ -164,7 +218,7 @@ void decelerate(int len, int tar_speed)
   gpio_set_level(CW_R, LOW);
   gpio_set_level(CW_L, LOW);
 
-  motor_move = true;
+  speed_adjusting = true;
   while ((len - (step_r + step_l) / 2.0 * PULSE) >
          (((speed * speed) - (MIN_SPEED * MIN_SPEED)) / (2.0 * 1000.0 * 1.5)))
   {
@@ -179,7 +233,7 @@ void decelerate(int len, int tar_speed)
     delay_ms(1);
     continue;
   }
-  motor_move = false;
+  speed_adjusting = false;
   ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
   ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 0);
 
@@ -195,18 +249,35 @@ void motor_start()
 void motor_stop()
 {
   gpio_set_level(MOTOR_EN, LOW);
+  speed_adjusting = false;
+}
+
+static double limit_speed(double speed)
+{
+  double limited_speed = speed;
+  if (speed > 500)
+  {
+    limited_speed = 500;
+  }
+  else if (speed < 0.001)
+  {
+    limited_speed = 0.0;
+  }
+  else if (speed < MIN_SPEED)
+  {
+    limited_speed = MIN_SPEED;
+  }
+  return limited_speed;
 }
 
 // 速度更新用タイマー割り込み(1kHz)
 static bool IRAM_ATTR isr_speed_adjust(gptimer_handle_t timer, const gptimer_alarm_event_data_t *alarm_data, void *param)
 {
-  set_led(0x01);
-  if (!motor_move)
+  if (!speed_adjusting)
   {
     return 0;
   }
 
-  set_led(0x3);
   portENTER_CRITICAL_ISR(&timer_mux);
   speed += accel;
   if (speed > max_speed)
@@ -228,14 +299,13 @@ static bool IRAM_ATTR isr_speed_adjust(gptimer_handle_t timer, const gptimer_ala
   ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
   ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
   portEXIT_CRITICAL_ISR(&timer_mux);
-  set_led(0x0);
   return 0;
 }
 
 // 右モーターのパルスカウント
 static IRAM_ATTR void isr_pwm_count_r(void *user_arg)
 {
-  if (!motor_move)
+  if (!speed_adjusting)
   {
     WRITE_PERI_REG(LEDC_INT_CLR_REG, (1U << 1));
     return;
@@ -249,7 +319,7 @@ static IRAM_ATTR void isr_pwm_count_r(void *user_arg)
 // 右モーターのパルスカウント
 static IRAM_ATTR void isr_pwm_count_l(void *user_arg)
 {
-  if (!motor_move)
+  if (!speed_adjusting)
   {
     WRITE_PERI_REG(LEDC_INT_CLR_REG, (1U << 2));
     return;
