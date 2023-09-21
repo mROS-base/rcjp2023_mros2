@@ -19,8 +19,12 @@
 #define AD4_CHANNEL ADC_CHANNEL_6
 #define AD0_CHANNEL ADC_CHANNEL_7
 
-typedef enum {
-  L, FL, FR, R
+typedef enum
+{
+  L,
+  FL,
+  FR,
+  R
 } SENSOR_POS;
 
 void analog_sensor_init();
