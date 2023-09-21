@@ -13,10 +13,12 @@ https://drive.google.com/drive/folders/1IaM4y-6g7HS8LDs8mmeQbTweTgQMObqq?usp=sha
 
 - STEP0: hello_world/
 - STET1: blink_led/
-- STEP2: hello_pico/
+- STEP2: hello_pico/  components/pico_driver/
 - STEP3: drive_pico/
 - STEP4: pico_cmdvel_mros2/
 - STEP5: pico_mros2/
+
+なお，ESP-IDFプロジェクトのアプリケーションの各ディレクトリには，ESP32S3を対象とした `sdkconfig` をgit管理対象として格納してあります（`idf.py set-target esp32s3`によって生成し，さらに *_mros2/ については必要な設定変更を適用済み）．
 
 講習会の教材には，次のロボット・基板を使用しています．
 
