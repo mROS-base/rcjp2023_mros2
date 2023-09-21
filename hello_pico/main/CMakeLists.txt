@@ -1,2 +1,3 @@
-idf_component_register(SRCS "app.c" "led.c" "pushswitch.c" "buzzer.c" "analog_sensor.c" "pico.c"
+idf_component_register(SRCS "app.c"
+                    REQUIRES "pico_driver"
                     INCLUDE_DIRS ".")
