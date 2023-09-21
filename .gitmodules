@@ -1,0 +1,3 @@
+[submodule "components/mros2-esp32"]
+	path = components/mros2-esp32
+	url = https://github.com/mROS-base/mros2-esp32
