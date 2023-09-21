@@ -34,6 +34,4 @@ https://drive.google.com/drive/folders/1IaM4y-6g7HS8LDs8mmeQbTweTgQMObqq?usp=sha
 各ファイルはライセンスがファイル中に明記されている場合，そのライセンスに従います．特に明記されていない場合は，Apache License, Version 2.0に基づき公開されています．  
 ライセンスの全文は[LICENSE](./LICENSE)または[https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)から確認できます．
 
-各ファイルはライセンスがファイル中に明記されている場合，そのライセンスに従います．特に明記されていない場合は，Apache License, Version 2.0に基づき公開されています．
-ライセンスの全文はLICENSE.mdまたはhttps://www.apache.org/licenses/LICENSE-2.0から確認できます．
 ライセンスの所有者は[mROS-base](https://github.com/mROS-base)および[株式会社アールティ](https://rt-net.jp/)です．
