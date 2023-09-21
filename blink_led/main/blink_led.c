@@ -4,10 +4,10 @@
 #include "driver/gpio.h"
 #include "led.h"
 
-extern "C" void app_main(void)
+void app_main(void)
 {
   led_init();
-  
+
   while (1)
   {
     gpio_set_level(LED0, 1);

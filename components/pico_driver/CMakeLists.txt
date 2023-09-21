@@ -1,6 +1,6 @@
 set(SRCS "analog_sensor.c"
          "buzzer.c"
-         "common.c"
+         "delay_ms.c"
          "led.c"
          "motor.c"
          "pico.c"
