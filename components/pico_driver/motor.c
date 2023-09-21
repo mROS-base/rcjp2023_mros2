@@ -26,6 +26,7 @@ double accel = 0.0;
 double speed = 0.0;
 bool speed_adjusting = false;
 
+static double limit_speed(double speed);
 static bool isr_speed_adjust(gptimer_handle_t timer, const gptimer_alarm_event_data_t *alarm_data, void *param);
 static void isr_pwm_count_r(void *);
 static void isr_pwm_count_l(void *);
@@ -122,14 +123,7 @@ void drive_by_cmd_vel(double linear_x, double angular_z)
     gpio_set_level(CW_R, HIGH);
     speed_r *= -1;
   }
-  if (speed_r < 0.001)
-  {
-    speed_r = 0.0;
-  }
-  else if (speed_r < MIN_SPEED)
-  {
-    speed_r = MIN_SPEED;
-  }
+  speed_r = limit_speed(speed_r);
 
   if (speed_l > 0)
   {
@@ -140,14 +134,7 @@ void drive_by_cmd_vel(double linear_x, double angular_z)
     gpio_set_level(CW_L, HIGH);
     speed_l *= -1;
   }
-  if (speed_l < 0.001)
-  {
-    speed_l = 0.0;
-  }
-  else if (speed_l < MIN_SPEED)
-  {
-    speed_l = MIN_SPEED;
-  }
+  speed_l = limit_speed(speed_l);
 
   if (speed_r == 0.0)
   {
@@ -264,6 +251,24 @@ void motor_stop()
 {
   gpio_set_level(MOTOR_EN, LOW);
   speed_adjusting = false;
+}
+
+static double limit_speed(double speed)
+{
+  double limited_speed = speed;
+  if (speed > 500)
+  {
+    limited_speed = 500;
+  }
+  else if (speed < 0.001)
+  {
+    limited_speed = 0.0;
+  }
+  else if (speed < MIN_SPEED)
+  {
+    limited_speed = MIN_SPEED;
+  }
+  return limited_speed;
 }
 
 // 速度更新用タイマー割り込み(1kHz)
