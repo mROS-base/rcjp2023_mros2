@@ -13,6 +13,7 @@
 #define TIRE_DIAMETER (48.00)
 #define PULSE (TIRE_DIAMETER * PI / 400.0)
 #define MIN_SPEED (MIN_HZ * PULSE)
+#define DUTY 511 // 10bit / 2 - 1
 
 #define HIGH 1
 #define LOW 0
@@ -21,5 +22,7 @@ void motor_init();
 void constant_speed(int len, int tar_speed);
 void accelerate(int len, int tar_speed);
 void decelerate(int len, int tar_speed);
+void motor_start();
+void motor_stop();
 
 #endif // __MOTOR_H_

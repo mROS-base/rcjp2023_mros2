@@ -6,6 +6,7 @@
 #include "buzzer.h"
 #include "analog_sensor.h"
 #include "motor.h"
+#include "common.h"
 
 void pico_init();
 void delay_ms(int ms);
