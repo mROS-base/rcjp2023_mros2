@@ -1,5 +1,4 @@
 #include "pushswitch.h"
-#include "driver/gpio.h"
 
 void pushswitch_init()
 {
@@ -10,4 +9,9 @@ void pushswitch_init()
   config.pull_down_en = GPIO_PULLDOWN_DISABLE;
   config.pull_up_en = GPIO_PULLUP_DISABLE;
   gpio_config(&config);
+}
+
+int read_switch(int switch_no)
+{
+  return gpio_get_level(switch_no);
 }
