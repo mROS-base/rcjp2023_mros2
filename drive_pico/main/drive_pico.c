@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "driver/gpio.h"
 #include "pico.h"
 
 void app_main(void)
@@ -7,7 +6,7 @@ void app_main(void)
   pico_init();
   while (1)
   {
-    while (gpio_get_level(SW_L) & gpio_get_level(SW_C) & gpio_get_level(SW_R))
+    while (read_switch(SW_L) & read_switch(SW_C) & read_switch(SW_R))
     {
       delay_ms(10);
       continue;

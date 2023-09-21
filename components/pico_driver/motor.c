@@ -7,7 +7,6 @@
 #include "driver/gptimer.h"
 #include "soc/ledc_reg.h"
 #include "delay_ms.h"
-#include "led.h"
 #include "esp_log.h"
 
 portMUX_TYPE timer_mux = portMUX_INITIALIZER_UNLOCKED;
@@ -274,13 +273,11 @@ static double limit_speed(double speed)
 // 速度更新用タイマー割り込み(1kHz)
 static bool IRAM_ATTR isr_speed_adjust(gptimer_handle_t timer, const gptimer_alarm_event_data_t *alarm_data, void *param)
 {
-  set_led(0x01);
   if (!speed_adjusting)
   {
     return 0;
   }
 
-  set_led(0x3);
   portENTER_CRITICAL_ISR(&timer_mux);
   speed += accel;
   if (speed > max_speed)
@@ -302,7 +299,6 @@ static bool IRAM_ATTR isr_speed_adjust(gptimer_handle_t timer, const gptimer_ala
   ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
   ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
   portEXIT_CRITICAL_ISR(&timer_mux);
-  set_led(0x0);
   return 0;
 }
 
