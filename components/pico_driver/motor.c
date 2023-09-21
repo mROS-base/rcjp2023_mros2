@@ -76,7 +76,7 @@ void motor_init()
 
   ledc_channel_config_t ledc_channel_conf_r = {};
   ledc_channel_conf_r.channel = LEDC_CHANNEL_1;
-  ledc_channel_conf_r.duty = DUTY;
+  ledc_channel_conf_r.duty = 0;
   ledc_channel_conf_r.gpio_num = PWM_R;
   ledc_channel_conf_r.intr_type = LEDC_INTR_FADE_END;
   ledc_channel_conf_r.speed_mode = LEDC_LOW_SPEED_MODE;
@@ -94,7 +94,7 @@ void motor_init()
 
   ledc_channel_config_t ledc_channel_conf_l = {};
   ledc_channel_conf_l.channel = LEDC_CHANNEL_2;
-  ledc_channel_conf_l.duty = DUTY;
+  ledc_channel_conf_l.duty = 0;
   ledc_channel_conf_l.gpio_num = PWM_L;
   ledc_channel_conf_l.intr_type = LEDC_INTR_FADE_END;
   ledc_channel_conf_l.speed_mode = LEDC_LOW_SPEED_MODE;
