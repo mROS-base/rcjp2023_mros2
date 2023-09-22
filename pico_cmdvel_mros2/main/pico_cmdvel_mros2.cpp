@@ -30,7 +30,7 @@ extern "C" void app_main(void)
   /* mros2ノードの生成 */
   mros2::Node node = mros2::Node::create_node("sub_twist");
   /* 購読対象のトピックの型・名前・コールバック関数の設定 */
-  mros2::Subscriber sub = node.create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, userCallback);
+  mros2::Subscriber sub = node.create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, twist_callback);
 
   MROS2_INFO("ready to subscribe message");
 
