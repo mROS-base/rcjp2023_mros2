@@ -8,7 +8,7 @@ static adc_oneshot_unit_handle_t adc_handle;
 void analog_sensor_init()
 {
   gpio_config_t config = {};
-  config.pin_bit_mask = (1ULL << SLED_FR) | (1ULL << SLED_R) | (1ULL << SLED_L) | (1ULL << SLED_FR);
+  config.pin_bit_mask = (1ULL << SLED_FR) | (1ULL << SLED_R) | (1ULL << SLED_L) | (1ULL << SLED_FL);
   config.mode = GPIO_MODE_OUTPUT;
   config.intr_type = GPIO_INTR_DISABLE;
   config.pull_down_en = GPIO_PULLDOWN_DISABLE;
@@ -28,6 +28,10 @@ void analog_sensor_init()
   adc_channel_config.bitwidth = ADC_BITWIDTH_12;
   adc_channel_config.atten = ADC_ATTEN_DB_11;
   adc_oneshot_config_channel(adc_handle, AD1_CHANNEL, &adc_channel_config);
+  adc_oneshot_config_channel(adc_handle, AD2_CHANNEL, &adc_channel_config);
+  adc_oneshot_config_channel(adc_handle, AD3_CHANNEL, &adc_channel_config);
+  adc_oneshot_config_channel(adc_handle, AD4_CHANNEL, &adc_channel_config);
+  adc_oneshot_config_channel(adc_handle, AD0_CHANNEL, &adc_channel_config);
 }
 
 int read_sensor(SENSOR_POS pos)
