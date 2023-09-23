@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "pico.h"
 
 void app_main(void)
