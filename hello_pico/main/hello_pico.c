@@ -26,26 +26,26 @@ void app_main(void)
 
   char mode = 1;
   set_led(mode);
-  int sensor_value_r;
-  int sensor_value_fr;
-  int sensor_value_fl;
-  int sensor_value_l;
+  int light_sensor_value_r;
+  int light_sensor_value_fr;
+  int light_sensor_value_fl;
+  int light_sensor_value_l;
   int battery_level;
 
   while (1)
   {
     while (read_switch(SW_L) && read_switch(SW_C) && read_switch(SW_R))
     {
-      sensor_value_r = read_sensor(R);
-      sensor_value_fr = read_sensor(FR);
-      sensor_value_fl = read_sensor(FL);
-      sensor_value_l = read_sensor(L);
+      light_sensor_value_r = read_light_sensor(R);
+      light_sensor_value_fr = read_light_sensor(FR);
+      light_sensor_value_fl = read_light_sensor(FL);
+      light_sensor_value_l = read_light_sensor(L);
       battery_level = read_battery_level();
-      ESP_LOGI("app_main", "r_sen  is %d\n\r", sensor_value_r);
-      ESP_LOGI("app_main", "fr_sen is %d\n\r", sensor_value_fr);
-      ESP_LOGI("app_main", "fl_sen is %d\n\r", sensor_value_fl);
-      ESP_LOGI("app_main", "l_sen  is %d\n\r", sensor_value_l);
-      ESP_LOGI("app_main", "battery_level is %d\n\r", battery_level);
+      ESP_LOGI("app_main", "right sensor:       %d\n\r", light_sensor_value_r);
+      ESP_LOGI("app_main", "front-right_sensor: %d\n\r", light_sensor_value_fr);
+      ESP_LOGI("app_main", "front-left_sensor:  %d\n\r", light_sensor_value_fl);
+      ESP_LOGI("app_main", "left_sensor:        %d\n\r", light_sensor_value_l);
+      ESP_LOGI("app_main", "battery_level:      %d\n\r", battery_level);
 
       delay_ms(100);
       continue;
@@ -94,6 +94,7 @@ void app_main(void)
       execByMode(mode);
     }
     delay_ms(30);
+
     while (!(read_switch(SW_L) && read_switch(SW_C) && read_switch(SW_R)))
     {
       delay_ms(10);

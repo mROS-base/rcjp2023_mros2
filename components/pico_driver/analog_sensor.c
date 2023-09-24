@@ -2,7 +2,7 @@
 #include "driver/gpio.h"
 #include "esp_adc/adc_oneshot.h"
 
-static int _read_sensor(adc_channel_t sensor, gpio_num_t ked);
+static int _read_light_sensor(adc_channel_t sensor, gpio_num_t ked);
 static adc_oneshot_unit_handle_t adc_handle;
 
 void analog_sensor_init()
@@ -34,18 +34,18 @@ void analog_sensor_init()
   adc_oneshot_config_channel(adc_handle, AD0_CHANNEL, &adc_channel_config);
 }
 
-int read_sensor(SENSOR_POS pos)
+int read_light_sensor(SENSOR_POS pos)
 {
   switch (pos)
   {
   case FR:
-    return _read_sensor(AD1_CHANNEL, SLED_FR);
+    return _read_light_sensor(AD1_CHANNEL, SLED_FR);
   case FL:
-    return _read_sensor(AD2_CHANNEL, SLED_FL);
+    return _read_light_sensor(AD2_CHANNEL, SLED_FL);
   case R:
-    return _read_sensor(AD3_CHANNEL, SLED_R);
+    return _read_light_sensor(AD3_CHANNEL, SLED_R);
   case L:
-    return _read_sensor(AD4_CHANNEL, SLED_L);
+    return _read_light_sensor(AD4_CHANNEL, SLED_L);
   }
   return 0;
 }
@@ -57,7 +57,7 @@ int read_battery_level()
   return value;
 }
 
-static int _read_sensor(adc_channel_t sensor_channel, gpio_num_t sled)
+static int _read_light_sensor(adc_channel_t sensor_channel, gpio_num_t sled)
 {
   gpio_set_level(sled, 1);
   for (int i = 0; i < 300; i++)
