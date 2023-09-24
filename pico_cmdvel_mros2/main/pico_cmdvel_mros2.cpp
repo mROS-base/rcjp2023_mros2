@@ -1,13 +1,15 @@
 #include "mros2.h"
 #include "mros2-platform.h"
+/* Twist型を使用するためのヘッダファイル */
 #include "geometry_msgs/msg/twist.hpp"
 
 /* C実装の pico_driver をC++モジュールからリンク */
-extern "C" {
+extern "C"
+{
 #include "pico.h"
 }
 
-/* /cmd_vel を購読時に実行されるコールバック関数 */
+/* /cmd_vel の購読時に実行されるコールバック関数 */
 void twist_callback(geometry_msgs::msg::Twist *msg)
 {
   MROS2_INFO("subscribed Twist msg! linear = %.2f, angular = %.2f",
@@ -29,7 +31,7 @@ extern "C" void app_main(void)
   mros2::init(0, NULL);
   /* mros2ノードの生成 */
   mros2::Node node = mros2::Node::create_node("sub_twist");
-  /* 購読対象のトピックの型・名前・コールバック関数の設定 */
+  /* 購読者として登録・トピックの型と名前，コールバック関数の設定 */
   mros2::Subscriber sub = node.create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, twist_callback);
 
   MROS2_INFO("ready to subscribe message");
