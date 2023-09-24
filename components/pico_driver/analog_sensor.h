@@ -1,5 +1,5 @@
-#ifndef __PROXIMITY_SENSOR_H_
-#define __PROXIMITY_SENSOR_H_
+#ifndef __ANALOG_SENSOR_H_
+#define __ANALOG_SENSOR_H_
 
 #define SLED_FR GPIO_NUM_16
 #define SLED_FL GPIO_NUM_15
@@ -28,7 +28,7 @@ typedef enum
 } SENSOR_POS;
 
 void analog_sensor_init();
-int read_sensor(SENSOR_POS);
+int read_light_sensor(SENSOR_POS);
 int read_battery_level();
 
-#endif // __PROXIMITY_SENSOR_H_
+#endif // __ANALOG_SENSOR_H_
