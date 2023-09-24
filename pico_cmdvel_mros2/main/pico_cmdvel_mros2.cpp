@@ -3,7 +3,8 @@
 #include "geometry_msgs/msg/twist.hpp"
 
 /* C実装の pico_driver をC++モジュールからリンク */
-extern "C" {
+extern "C"
+{
 #include "pico.h"
 }
 
