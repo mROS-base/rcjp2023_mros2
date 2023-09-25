@@ -32,7 +32,7 @@ static void isr_pwm_count_l(void *);
 void motor_init()
 {
   gpio_config_t config = {};
-  config.pin_bit_mask = (1ULL << MOTOR_EN) | (1ULL << CW_R) | (1ULL << CW_R) | (1ULL << PWM_R) | (1ULL << PWM_L);
+  config.pin_bit_mask = (1ULL << MOTOR_EN) | (1ULL << CW_R) | (1ULL << CW_L) | (1ULL << PWM_R) | (1ULL << PWM_L);
   config.mode = GPIO_MODE_OUTPUT;
   config.intr_type = GPIO_INTR_DISABLE;
   config.pull_down_en = GPIO_PULLDOWN_DISABLE;
